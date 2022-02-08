@@ -10,8 +10,8 @@ class Rectangle:
     def __init__(self, top_left, bottom_right):
         """Constructs a rectangle.
 
-        :param top_left: A tuple representing the top left point in the rectangle.
-        :param bottom_right: A tuple representing the bottom right point in the rectangle.
+        :param top_left: A tuple representing the top left point (x1, y1) in the rectangle.
+        :param bottom_right: A tuple representing the bottom right point (x2, y2) in the rectangle.
         """
         self._top_left = top_left
         self._bottom_right = bottom_right
@@ -194,7 +194,7 @@ class GaussianMixtureModel:
         """Trains the model"""
         self._gmm.fit(samples)
 
-        # Compute minimum likelihood for computing distances similar to Mahalanobis distances.
+        # Compute maximum likelihood for computing distances similar to Mahalanobis distances.
         num_dims = samples.shape[1]
         num_comps = self._gmm.n_components
 
@@ -210,41 +210,41 @@ class GaussianMixtureModel:
         else:
             raise Exception("Unsupported covariance type")
 
-        self._c = 0
+        max_likelihood = 0
         for mean, covar, w in zip(self._gmm.means_, covariances, self._gmm.weights_):
-            self._c += w / np.sqrt(np.linalg.det(2 * np.pi * covar))
-        self._c = np.log(self._c)
+            max_likelihood += w / np.sqrt(np.linalg.det(2 * np.pi * covar))
+        self._max_log_likelihood = np.log(max_likelihood)
 
     def compute_mahalanobis_distances(self, image):
         """Computes the Mahalanobis distances for a feature image given this model"""
 
         # At least, compute something similar to Mahalanobis distances for this model type.
         samples = image.reshape(-1, 3)
-        mahalanobis = np.sqrt(2 * (self._c - self._gmm.score_samples(samples)))
+        mahalanobis = np.sqrt(2 * (self._max_log_likelihood - self._gmm.score_samples(samples)))
 
         return mahalanobis.reshape(image.shape[:2])
 
 
 def run_segmentation_lab():
     # Set parameters.
-    use_otsu = False
-    use_adaptive_model = False
-    max_std_dev = 20
-    thresh_val = 8
-    adaptive_update_ratio = 0.1
-    model_type = MultivariateNormalModel  # or you can try GaussianMixtureModel
+    use_otsu = False                        # Use Otsu's method to estimate threshold automatically.
+    use_adaptive_model = False              # Use adaptive method to gradually update the model continuously.
+    adaptive_update_ratio = 0.1             # Update ratio for adaptive method.
+    max_std_dev = 20                        # Maximum Mahalanobis distance we represesent (in slider and uint16 image).
+    thresh_val = 8                          # Default value for threshold.
+    model_type = MultivariateNormalModel    # Model: MultivariateNormalModel and GaussianMixtureModel is implemented.
 
     # Create windows and gui components.
     cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
     cv2.namedWindow('mahalanobis_img', cv2.WINDOW_NORMAL)
     cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
 
-    def onchange(val):
+    def on_change(val):
         """Callback for trackbar"""
         nonlocal thresh_val
         thresh_val = val
 
-    cv2.createTrackbar('Threshold', 'frame', thresh_val, max_std_dev, onchange)
+    cv2.createTrackbar('Threshold', 'frame', thresh_val, max_std_dev, on_change)
 
     # Connect to the camera.
     # Change to video file if you want to use that instead.
