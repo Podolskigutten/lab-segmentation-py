@@ -248,13 +248,13 @@ def run_segmentation_lab():
 
     # Connect to the camera.
     # Change to video file if you want to use that instead.
-    device_id = 0
-    cap = cv2.VideoCapture(device_id)
+    video_source = 0
+    cap = cv2.VideoCapture(video_source)
     if not cap.isOpened():
-        print(f"Could not open camera {device_id}")
+        print(f"Could not open video source {video_source}")
         return
     else:
-        print(f"Successfully opened camera {device_id}")
+        print(f"Successfully opened video source {video_source}")
 
     # Read first frame.
     success, frame = cap.read()
