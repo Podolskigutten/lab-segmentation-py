@@ -2,6 +2,54 @@ import cv2
 import numpy as np
 
 
+class SegmentationLabGui:
+    """A simple GUI for this lab for visualising results and choosing a threshold
+
+    It is assumed that event handling and keyboard input using cv2.waitKey() is performed elsewhere.
+    """
+
+    def __init__(self, initial_thresh_val, max_thresh_val):
+        """Constracts the GUI
+
+        :param initial_thresh_val: Initial value for the threshold.
+        :param max_thresh_val: Maximum value for the threshold slider.
+        """
+        # Create windows.
+        cv2.namedWindow('Segmented frame', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Mahalanobis image', cv2.WINDOW_NORMAL)
+
+        # Create slider that adjusts the threshold.
+        thresh_setter_ref = self.__class__.thresh_val.__set__
+        cv2.createTrackbar('Threshold', 'Segmented frame', 0, max_thresh_val, lambda val: thresh_setter_ref(self, val))
+
+        # Set threshold (and thereby trackbar) to initial value.
+        self._thresh_val = initial_thresh_val
+
+    def __del__(self):
+        """Destructor"""
+        # Close windows.
+        cv2.destroyAllWindows()
+
+    @property
+    def thresh_val(self):
+        """The threshold value"""
+        return self._thresh_val
+
+    @thresh_val.setter
+    def thresh_val(self, val):
+        """Setter for the threshold value that also updates the slider"""
+        self._thresh_val = val
+        cv2.setTrackbarPos('Threshold', 'Segmented frame', self._thresh_val)
+
+    def show_frame(self, frame_img):
+        """Show an image in the "Segmented frame" window"""
+        cv2.imshow('Segmented frame', frame_img)
+
+    def show_mahalanobis(self, mahalanobis_img):
+        """Show an image in the "Mahalanobis image" window"""
+        cv2.imshow('Mahalanobis image', mahalanobis_img)
+
+
 class Rectangle:
     """Represents a geometric rectangle"""
 
@@ -67,49 +115,15 @@ def draw_sampling_rectangle(image, sampling_rectangle):
     cv2.rectangle(image, sampling_rectangle.tl, sampling_rectangle.br, colour, thickness)
 
 
-class SegmentationLabGui:
-    """A simple GUI for this lab for visualising results and choosing a threshold
+def extract_training_samples(feature_image, sampling_rectangle):
+    """Extracts training samples from a sampling rectangle
 
-    It is assumed that event handling and keyboard input using cv2.waitKey() is performed elsewhere.
+    :param feature_image: An image of feature vectors.
+    :param sampling_rectangle: The region in the feature image to extract samples from.
+
+    :return The samples
     """
 
-    def __init__(self, initial_thresh_val, max_thresh_val):
-        """Constracts the GUI
-
-        :param initial_thresh_val: Initial value for the threshold.
-        :param max_thresh_val: Maximum value for the threshold slider.
-        """
-        # Create windows.
-        cv2.namedWindow('Segmented frame', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('Mahalanobis image', cv2.WINDOW_NORMAL)
-
-        # Create slider that adjusts the threshold.
-        thresh_setter_ref = self.__class__.thresh_val.__set__
-        cv2.createTrackbar('Threshold', 'Segmented frame', 0, max_thresh_val, lambda val: thresh_setter_ref(self, val))
-
-        # Set threshold (and thereby trackbar) to initial value.
-        self._thresh_val = initial_thresh_val
-
-    def __del__(self):
-        """Destructor"""
-        # Close windows.
-        cv2.destroyAllWindows()
-
-    @property
-    def thresh_val(self):
-        """The threshold value"""
-        return self._thresh_val
-
-    @thresh_val.setter
-    def thresh_val(self, val):
-        """Setter for the threshold value that also updates the slider"""
-        self._thresh_val = val
-        cv2.setTrackbarPos('Threshold', 'Segmented frame', self._thresh_val)
-
-    def show_frame(self, frame_img):
-        """Show an image in the "Segmented frame" window"""
-        cv2.imshow('Segmented frame', frame_img)
-
-    def show_mahalanobis(self, mahalanobis_img):
-        """Show an image in the "Mahalanobis image" window"""
-        cv2.imshow('Mahalanobis image', mahalanobis_img)
+    patch = feature_image[sampling_rectangle.y_slice(), sampling_rectangle.x_slice()]
+    samples = patch.reshape(-1, 3)
+    return samples

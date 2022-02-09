@@ -5,7 +5,8 @@ import scipy.spatial.distance as ssd
 from sklearn.mixture import GaussianMixture
 
 # Import common lab functions.
-from common_lab_utils import Rectangle, SegmentationLabGui, get_sampling_rectangle, draw_sampling_rectangle
+from common_lab_utils import SegmentationLabGui, \
+    get_sampling_rectangle, draw_sampling_rectangle, extract_training_samples
 
 
 def run_segmentation_lab():
@@ -101,39 +102,43 @@ def run_segmentation_lab():
     cap.release()
 
 
-def extract_features(feature_image):
-    """Extracts features from the image frame
+class MultivariateNormalModel:
+    """Represents a multivariate normal model"""
 
-    :param feature_image: The original image frame
+    def __init__(self, samples):
+        """Constructs the model by training it on a set of feature samples
 
-    :return An image of feature vectors in the np.float32 datatype
+        :param samples: A set of feature samples
+        """
+
+        self._perform_training(samples)
+
+    def _perform_training(self, samples):
+        """Trains the model"""
+        self.mean = np.mean(samples, axis=0)
+        self.covariance = np.cov(samples, rowvar=False)
+        self.inverse_covariance = np.linalg.inv(self.covariance)
+
+    def compute_mahalanobis_distances(self, feature_image):
+        """Computes the Mahalanobis distances for a feature image given this model"""
+        samples = feature_image.reshape(-1, 3)
+        mahalanobis = ssd.cdist(samples, self.mean[None, :], metric='mahalanobis', VI=self.inverse_covariance)
+
+        return mahalanobis.reshape(feature_image.shape[:2])
+
+
+def update_samples(old_samples, new_samples, update_ratio):
+    """Update samples with a certain amount of new samples
+
+    :param old_samples: The current set of samples.
+    :param new_samples: A new set of samples.
+    :param update_ratio: The ratio of samples to update.
+
+    :return The updated set of samples.
     """
-
-    # Convert to float32.
-    feature_image = np.float32(feature_image) / 255.0
-
-    # Choose a colour format:
-    # return feature_image
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HSV)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HLS)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Lab)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Luv)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2XYZ)
-    return cv2.cvtColor(feature_image, cv2.COLOR_BGR2YCrCb)
-
-
-def extract_training_samples(feature_image, sampling_rectangle):
-    """Extracts training samples from a sampling rectangle
-
-    :param feature_image: An image of feature vectors.
-    :param sampling_rectangle: The region in the feature image to extract samples from.
-
-    :return The samples
-    """
-
-    patch = feature_image[sampling_rectangle.y_slice(), sampling_rectangle.x_slice()]
-    samples = patch.reshape(-1, 3)
-    return samples
+    rand_num = np.random.rand(new_samples.shape[0])
+    selected_samples = rand_num < update_ratio
+    old_samples[selected_samples] = new_samples[selected_samples]
 
 
 def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
@@ -166,43 +171,25 @@ def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
     return round(thresh_scaled / scale), np.uint8(segmented_image)
 
 
-def update_samples(old_samples, new_samples, update_ratio):
-    """Update samples with a certain amount of new samples
+def extract_features(feature_image):
+    """Extracts features from the image frame
 
-    :param old_samples: The current set of samples.
-    :param new_samples: A new set of samples.
-    :param update_ratio: The ratio of samples to update.
+    :param feature_image: The original image frame
 
-    :return The updated set of samples.
+    :return An image of feature vectors in the np.float32 datatype
     """
-    rand_num = np.random.rand(new_samples.shape[0])
-    selected_samples = rand_num < update_ratio
-    old_samples[selected_samples] = new_samples[selected_samples]
 
+    # Convert to float32.
+    feature_image = np.float32(feature_image) / 255.0
 
-class MultivariateNormalModel:
-    """Represents a multivariate normal model"""
-
-    def __init__(self, samples):
-        """Constructs the model by training it on a set of feature samples
-
-        :param samples: A set of feature samples
-        """
-
-        self._perform_training(samples)
-
-    def _perform_training(self, samples):
-        """Trains the model"""
-        self.mean = np.mean(samples, axis=0)
-        self.covariance = np.cov(samples, rowvar=False)
-        self.inverse_covariance = np.linalg.inv(self.covariance)
-
-    def compute_mahalanobis_distances(self, feature_image):
-        """Computes the Mahalanobis distances for a feature image given this model"""
-        samples = feature_image.reshape(-1, 3)
-        mahalanobis = ssd.cdist(samples, self.mean[None, :], metric='mahalanobis', VI=self.inverse_covariance)
-
-        return mahalanobis.reshape(feature_image.shape[:2])
+    # Choose a colour format:
+    # return feature_image
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HSV)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HLS)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Lab)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Luv)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2XYZ)
+    return cv2.cvtColor(feature_image, cv2.COLOR_BGR2YCrCb)
 
 
 class GaussianMixtureModel:
