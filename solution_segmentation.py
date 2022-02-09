@@ -1,60 +1,104 @@
+# Import libraries
 import cv2
 import numpy as np
 import scipy.spatial.distance as ssd
 from sklearn.mixture import GaussianMixture
 
-
-class Rectangle:
-    """Represents a geometric rectangle"""
-
-    def __init__(self, top_left, bottom_right):
-        """Constructs a rectangle.
-
-        :param top_left: A tuple representing the top left point (x1, y1) in the rectangle.
-        :param bottom_right: A tuple representing the bottom right point (x2, y2) in the rectangle.
-        """
-        self._top_left = top_left
-        self._bottom_right = bottom_right
-
-    @property
-    def tl(self):
-        """The top left point of the rectangle"""
-        return self._top_left
-
-    @property
-    def br(self):
-        """The bottom right point of the rectangle"""
-        return self._bottom_right
-
-    def x_slice(self):
-        """Extract a slice object for the x-range of the rectangle"""
-        return slice(self.tl[0], self.br[0])
-
-    def y_slice(self):
-        """Extract a slice object for the y-range of the rectangle"""
-        return slice(self.tl[1], self.br[1])
+# Import common lab functions.
+from common_lab_utils import Rectangle, SegmentationLabGui, get_sampling_rectangle, draw_sampling_rectangle
 
 
-def get_sampling_rectangle(img_shape, rect_size=(80, 100)):
-    """Computes the sampling rectangle based on the image and rectangle sizes
+def run_segmentation_lab():
+    # Set parameters.
+    use_otsu = False                        # Use Otsu's method to estimate threshold automatically.
+    use_adaptive_model = False              # Use adaptive method to gradually update the model continuously.
+    adaptive_update_ratio = 0.1             # Update ratio for adaptive method.
+    max_distance = 20                       # Maximum Mahalanobis distance we represent (in slider and uint16 image).
+    initial_thresh_val = 8                  # Initial value for threshold.
+    model_type = MultivariateNormalModel    # Model: MultivariateNormalModel and GaussianMixtureModel is implemented.
 
-    :param img_shape: The shape of the images, as returned by numpy.ndarray.shape.
-    :param rect_size: The size of the sampling rectangle given as the tuple (height, width)
+    # Set up a simple gui for the lab (based on OpenCV highgui).
+    gui = SegmentationLabGui(initial_thresh_val, max_distance)
 
-    :return A Rectangle representing the sampling rectangle
-    """
+    # Connect to the camera.
+    # Change to video file if you want to use that instead.
+    video_source = 0
+    cap = cv2.VideoCapture(video_source)
+    if not cap.isOpened():
+        print(f"Could not open video source {video_source}")
+        return
+    else:
+        print(f"Successfully opened video source {video_source}")
 
-    img_height, img_width, _ = img_shape
-    rect_height, rect_width = rect_size
+    # Read the first frame.
+    success, frame = cap.read()
+    if not success:
+        return
 
-    center_x = img_width // 2
-    center_y = (img_height * 4) // 5
-    x_left = np.clip(center_x - rect_width // 2, 0, img_width)
-    x_right = np.clip(x_left + rect_width, 0, img_width)
-    y_top = np.clip(center_y - rect_height // 2, 0, img_height)
-    y_bottom = np.clip(y_top + rect_height, 0, img_height)
+    # Construct sampling region based on image dimensions.
+    sampling_rectangle = get_sampling_rectangle(frame.shape)
 
-    return Rectangle((x_left, y_top), (x_right, y_bottom))
+    # Train first model based on samples from the first image.
+    feature_image = extract_features(frame)
+    samples = extract_training_samples(feature_image, sampling_rectangle)
+    model = model_type(samples)
+
+    # The main loop in the program.
+    while True:
+        # Read next frame.
+        success, frame = cap.read()
+        if not success:
+            break
+
+        # Extract features.
+        feature_image = extract_features(frame)
+
+        # Update if using adaptive model
+        if use_adaptive_model:
+            new_samples = extract_training_samples(feature_image, sampling_rectangle)
+            update_samples(samples, new_samples, adaptive_update_ratio)
+            model = model_type(samples)
+
+        # Compute how well the pixel features fit with the model.
+        mahalanobis_img = model.compute_mahalanobis_distances(feature_image)
+
+        # Segment out the areas of the image that fits well enough.
+        gui.thresh_val, segmented = perform_segmentation(mahalanobis_img, gui.thresh_val, use_otsu, max_distance)
+
+        # Insert the segmented area as a green layer in the input frame and draw the sampling rectangle.
+        frame[segmented > 0] = (0, 255, 0)
+        draw_sampling_rectangle(frame, sampling_rectangle)
+
+        # Normalise the Mahalanobis image to [0, max_distance] for visualisation.
+        mahalanobis_img = mahalanobis_img / max_distance
+
+        # Show the results
+        gui.show_frame(frame)
+        gui.show_mahalanobis(mahalanobis_img)
+
+        # Update the GUI and wait a short time for input from the keyboard.
+        key = cv2.waitKey(1)
+
+        # React to keyboard commands.
+        if key == ord('q'):
+            print("Quitting")
+            break
+
+        elif key == ord(' '):
+            print("Extracting samples manually")
+            samples = extract_training_samples(feature_image, sampling_rectangle)
+            model = model_type(samples)
+
+        elif key == ord('o'):
+            use_otsu = not use_otsu
+            print(f"Use Otsu's: {use_otsu}")
+
+        elif key == ord('a'):
+            use_adaptive_model = not use_adaptive_model
+            print(f"Use adaptive model: {use_adaptive_model}")
+
+    # Stop video source.
+    cap.release()
 
 
 def extract_features(feature_image):
@@ -94,7 +138,7 @@ def extract_training_samples(feature_image, sampling_rectangle):
 
 def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
     """Segment the distance image by thresholding
-    
+
     :param distance_image: An image of "signature distances".
     :param thresh: Threshold value.
     :param use_otsu: Set to True to use Otsu's method to estimate the threshold value.
@@ -120,18 +164,6 @@ def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
 
     # Return updated threshold (from Otsu's) and segmented image.
     return round(thresh_scaled / scale), np.uint8(segmented_image)
-
-
-def draw_sampling_rectangle(image, sampling_rectangle):
-    """Draw the sampling rectangle in an image
-
-    :param image: The image to draw the rectangle in.
-    :param sampling_rectangle: The sampling rectangle.
-    """
-
-    colour = (0, 0, 255)
-    thickness = 3
-    cv2.rectangle(image, sampling_rectangle.tl, sampling_rectangle.br, colour, thickness)
 
 
 def update_samples(old_samples, new_samples, update_ratio):
@@ -223,106 +255,6 @@ class GaussianMixtureModel:
         mahalanobis = np.sqrt(2 * (self._max_log_likelihood - self._gmm.score_samples(samples)))
 
         return mahalanobis.reshape(image.shape[:2])
-
-
-def run_segmentation_lab():
-    # Set parameters.
-    use_otsu = False                        # Use Otsu's method to estimate threshold automatically.
-    use_adaptive_model = False              # Use adaptive method to gradually update the model continuously.
-    adaptive_update_ratio = 0.1             # Update ratio for adaptive method.
-    max_std_dev = 20                        # Maximum Mahalanobis distance we represesent (in slider and uint16 image).
-    thresh_val = 8                          # Default value for threshold.
-    model_type = MultivariateNormalModel    # Model: MultivariateNormalModel and GaussianMixtureModel is implemented.
-
-    # Create windows and gui components.
-    cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
-    cv2.namedWindow('mahalanobis_img', cv2.WINDOW_NORMAL)
-    cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
-
-    def on_change(val):
-        """Callback for trackbar"""
-        nonlocal thresh_val
-        thresh_val = val
-
-    cv2.createTrackbar('Threshold', 'frame', thresh_val, max_std_dev, on_change)
-
-    # Connect to the camera.
-    # Change to video file if you want to use that instead.
-    video_source = 0
-    cap = cv2.VideoCapture(video_source)
-    if not cap.isOpened():
-        print(f"Could not open video source {video_source}")
-        return
-    else:
-        print(f"Successfully opened video source {video_source}")
-
-    # Read first frame.
-    success, frame = cap.read()
-    if not success:
-        return
-
-    # Construct sampling region based on image dimensions.
-    sampling_rectangle = get_sampling_rectangle(frame.shape)
-
-    # Train first model based on samples from the first image.
-    feature_image = extract_features(frame)
-    samples = extract_training_samples(feature_image, sampling_rectangle)
-    model = model_type(samples)
-
-    # The main loop in the program.
-    while True:
-        # Read next frame.
-        success, frame = cap.read()
-        if not success:
-            break
-
-        # Extract features.
-        feature_image = extract_features(frame)
-
-        # Update if using adaptive model
-        if use_adaptive_model:
-            new_samples = extract_training_samples(feature_image, sampling_rectangle)
-            update_samples(samples, new_samples, adaptive_update_ratio)
-            model = model_type(samples)
-
-        # Compute how well the pixel features fit with the model.
-        mahalanobis_img = model.compute_mahalanobis_distances(feature_image)
-
-        # Segment out the areas of the image that fits well enough.
-        thresh_val, segmented = perform_segmentation(mahalanobis_img, thresh_val, use_otsu, max_std_dev)
-
-        # Set segmented area to green.
-        frame[segmented > 0] = (0, 255, 0)
-
-        # Draw current frame.
-        draw_sampling_rectangle(frame, sampling_rectangle)
-        viz = (mahalanobis_img - mahalanobis_img.min()) / (mahalanobis_img.max() - mahalanobis_img.min())
-
-        cv2.imshow('frame', frame)
-        cv2.imshow('mahalanobis_img', viz)
-        cv2.imshow('segmented', segmented)
-        cv2.setTrackbarPos('Threshold', 'frame', thresh_val)
-
-        # Update the GUI and wait a short time for input from the keyboard.
-        key = cv2.waitKey(1) & 0xFF
-
-        # React to commands from the keyboard.
-        if key == ord('q'):
-            print("Quitting")
-            break
-        elif key == ord(' '):
-            print("Extracting samples manually")
-            samples = extract_training_samples(feature_image, sampling_rectangle)
-            model = model_type(samples)
-        elif key == ord('o'):
-            use_otsu = not use_otsu
-            print(f"Use Otsu's: {use_otsu}")
-        elif key == ord('a'):
-            use_adaptive_model = not use_adaptive_model
-            print(f"Use adaptive model: {use_adaptive_model}")
-
-    cap.release()
-    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
