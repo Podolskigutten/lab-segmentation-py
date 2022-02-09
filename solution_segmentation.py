@@ -116,15 +116,15 @@ class MultivariateNormalModel:
     def _perform_training(self, samples):
         """Trains the model"""
 
-        self.mean = np.mean(samples, axis=0)
-        self.covariance = np.cov(samples, rowvar=False)
-        self.inverse_covariance = np.linalg.inv(self.covariance)
+        self._mean = np.mean(samples, axis=0)
+        self._covariance = np.cov(samples, rowvar=False)
+        self._inverse_covariance = np.linalg.inv(self._covariance)
 
     def compute_mahalanobis_distances(self, feature_image):
         """Computes the Mahalanobis distances for a feature image given this model"""
 
         samples = feature_image.reshape(-1, 3)
-        mahalanobis = ssd.cdist(samples, self.mean[np.newaxis, :], metric='mahalanobis', VI=self.inverse_covariance)
+        mahalanobis = ssd.cdist(samples, self._mean[np.newaxis, :], metric='mahalanobis', VI=self._inverse_covariance)
 
         return mahalanobis.reshape(feature_image.shape[:2])
 
@@ -241,8 +241,10 @@ class GaussianMixtureModel:
     def compute_mahalanobis_distances(self, image):
         """Computes the Mahalanobis distances for a feature image given this model"""
 
-        # At least, compute something similar to Mahalanobis distances for this model type.
         samples = image.reshape(-1, 3)
+
+        # GaussianMixture.score_samples() returns the log-likelihood,
+        # so transform this something similar to a Mahalanobis distance.
         mahalanobis = np.sqrt(2 * (self._max_log_likelihood - self._gmm.score_samples(samples)))
 
         return mahalanobis.reshape(image.shape[:2])

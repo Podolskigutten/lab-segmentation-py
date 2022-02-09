@@ -9,7 +9,7 @@ class SegmentationLabGui:
     """
 
     def __init__(self, initial_thresh_val, max_thresh_val):
-        """Constracts the GUI
+        """Constructs the GUI
 
         :param initial_thresh_val: Initial value for the threshold.
         :param max_thresh_val: Maximum value for the threshold slider.
