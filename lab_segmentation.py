@@ -1,22 +1,21 @@
 # Import libraries
 import cv2
+import numpy
 import numpy as np
-import scipy.spatial.distance as ssd
-from sklearn.mixture import GaussianMixture
 
 # Import common lab functions.
 from common_lab_utils import SegmentationLabGui, \
     get_sampling_rectangle, draw_sampling_rectangle, extract_training_samples
 
 
-def run_segmentation_solution():
+def run_segmentation_lab():
     # Set parameters.
     use_otsu = False                        # Use Otsu's method to estimate threshold automatically.
     use_adaptive_model = False              # Use adaptive method to gradually update the model continuously.
     adaptive_update_ratio = 0.1             # Update ratio for adaptive method.
     max_distance = 20                       # Maximum Mahalanobis distance we represent (in slider and uint16 image).
     initial_thresh_val = 8                  # Initial value for threshold.
-    model_type = MultivariateNormalModel    # Model: MultivariateNormalModel and GaussianMixtureModel is implemented.
+    model_type = MultivariateNormalModel    # Set feature model (this is the only one available now).
 
     # Set up a simple gui for the lab (based on OpenCV highgui).
     gui = SegmentationLabGui(initial_thresh_val, max_distance)
@@ -116,15 +115,20 @@ class MultivariateNormalModel:
     def _perform_training(self, samples):
         """Trains the model"""
 
-        self.mean = np.mean(samples, axis=0)
-        self.covariance = np.cov(samples, rowvar=False)
-        self.inverse_covariance = np.linalg.inv(self.covariance)
+        # TODO 1.1: Train the multivariate normal model by estimating the mean and covariance given the samples.
+        self.mean = np.ones(samples.shape[1])                       # Dummy solution, replace
+        self.covariance = numpy.identity(samples.shape[1])          # Dummy solution, replace
+
+        # TODO 1.2: Compute the inverse of the estimated covariance.
+        self.inverse_covariance = numpy.identity(samples.shape[1])  # Dummy solution, replace
 
     def compute_mahalanobis_distances(self, feature_image):
         """Computes the Mahalanobis distances for a feature image given this model"""
 
         samples = feature_image.reshape(-1, 3)
-        mahalanobis = ssd.cdist(samples, self.mean[np.newaxis, :], metric='mahalanobis', VI=self.inverse_covariance)
+
+        # TODO 2: Compute the mahalanobis distance for each pixel feature vector wrt the multivariate normal model.
+        mahalanobis = np.inf * np.ones(samples.shape[0])               # Dummy solution, replace
 
         return mahalanobis.reshape(feature_image.shape[:2])
 
@@ -139,9 +143,8 @@ def update_samples(old_samples, new_samples, update_ratio):
     :return The updated set of samples.
     """
 
-    rand_num = np.random.rand(new_samples.shape[0])
-    selected_samples = rand_num < update_ratio
-    old_samples[selected_samples] = new_samples[selected_samples]
+    # TODO 3: Implement a random update of samples given the ratio of new_samples
+    old_samples = new_samples
 
 
 def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
@@ -166,10 +169,7 @@ def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
         thresh_type |= cv2.THRESH_OTSU
     thresh_scaled, segmented_image = cv2.threshold(distances_scaled, thresh_scaled, 255, thresh_type)
 
-    # Perform cleanup using morphological operations.
-    structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_OPEN, structuring_element)
-    segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_CLOSE, structuring_element)
+    # TODO 4: Add morphological operations to reduce noise, and other fancy segmentation approaches.
 
     # Return updated threshold (from Otsu's) and segmented image.
     return round(thresh_scaled / scale), np.uint8(segmented_image)
@@ -186,67 +186,9 @@ def extract_features(feature_image):
     # Convert to float32.
     feature_image = np.float32(feature_image) / 255.0
 
-    # Choose a colour format:
-    # return feature_image
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HSV)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HLS)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Lab)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Luv)
-    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2XYZ)
-    return cv2.cvtColor(feature_image, cv2.COLOR_BGR2YCrCb)
-
-
-class GaussianMixtureModel:
-    """Represents a mixture of multivariate normal models
-
-    See https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
-    """
-
-    def __init__(self, samples, n_components=3, covariance_type='full'):
-        """Constructs the model by training it on a set of feature samples
-
-        :param samples: A set of feature samples
-        :param n_components: The number of components in the mixture.
-        :param covariance_type: Type of covariance representation, one of 'spherical', 'tied', 'diag' or 'full'.
-        """
-
-        self._gmm = GaussianMixture(n_components=n_components, covariance_type=covariance_type, init_params='random')
-        self._perform_training(samples)
-
-    def _perform_training(self, samples):
-        """Trains the model"""
-        self._gmm.fit(samples)
-
-        # Compute maximum likelihood for computing distances similar to Mahalanobis distances.
-        num_dims = samples.shape[1]
-        num_comps = self._gmm.n_components
-
-        cov_type = self._gmm.covariance_type
-        if cov_type == 'spherical':
-            covariances = np.einsum('i,jk->ijk', self._gmm.covariances_, np.identity(num_dims))
-        elif cov_type == 'tied':
-            covariances = np.repeat(self._gmm.covariances_[np.newaxis, :, :], num_comps, axis=0)
-        elif cov_type == 'diag':
-            covariances = np.einsum('ij, jk->ijk', self._gmm.covariances_, np.identity(num_dims))
-        elif cov_type == 'full':
-            covariances = self._gmm.covariances_
-        else:
-            raise Exception("Unsupported covariance type")
-
-        max_likelihood = 0
-        for mean, covar, w in zip(self._gmm.means_, covariances, self._gmm.weights_):
-            max_likelihood += w / np.sqrt(np.linalg.det(2 * np.pi * covar))
-        self._max_log_likelihood = np.log(max_likelihood)
-
-    def compute_mahalanobis_distances(self, image):
-        """Computes the Mahalanobis distances for a feature image given this model"""
-
-        # At least, compute something similar to Mahalanobis distances for this model type.
-        samples = image.reshape(-1, 3)
-        mahalanobis = np.sqrt(2 * (self._max_log_likelihood - self._gmm.score_samples(samples)))
-
-        return mahalanobis.reshape(image.shape[:2])
+    # TODO 5: Extract other/more features for each pixel.
+    return feature_image
 
 
 if __name__ == "__main__":
-    run_segmentation_solution()
+    run_segmentation_lab()
