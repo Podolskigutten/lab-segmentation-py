@@ -66,7 +66,7 @@ def run_segmentation_lab():
             frame[segmented > 0] *= np.uint8([0, 1, 0])
             draw_sampling_rectangle(frame, sampling_rectangle)
 
-            # Normalise the Mahalanobis image to [0, max_distance] for visualisation.
+            # Normalise the Mahalanobis image so that it represents [0, max_distance] in visualisation.
             mahalanobis_img = mahalanobis_img / max_distance
 
             # Show the results
@@ -113,11 +113,11 @@ class MultivariateNormalModel:
         """Trains the model"""
 
         # TODO 1.1: Train the multivariate normal model by estimating the mean and covariance given the samples.
-        self._mean = np.ones(samples.shape[1])                       # Dummy solution, replace
-        self._covariance = np.identity(samples.shape[1])          # Dummy solution, replace
+        self._mean = np.ones(samples.shape[1])                      # Dummy solution, replace
+        self._covariance = np.identity(samples.shape[1])            # Dummy solution, replace
 
         # TODO 1.2: Compute the inverse of the estimated covariance.
-        self._inverse_covariance = np.identity(samples.shape[1])  # Dummy solution, replace
+        self._inverse_covariance = np.identity(samples.shape[1])    # Dummy solution, replace
 
     def compute_mahalanobis_distances(self, feature_image):
         """Computes the Mahalanobis distances for a feature image given this model"""
@@ -125,7 +125,7 @@ class MultivariateNormalModel:
         samples = feature_image.reshape(-1, 3)
 
         # TODO 2: Compute the mahalanobis distance for each pixel feature vector wrt the multivariate normal model.
-        mahalanobis = np.inf * np.ones(samples.shape[0])             # Dummy solution, replace
+        mahalanobis = np.inf * np.ones(samples.shape[0])            # Dummy solution, replace
 
         return mahalanobis.reshape(feature_image.shape[:2])
 

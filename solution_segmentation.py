@@ -68,7 +68,7 @@ def run_segmentation_solution():
             frame[segmented > 0] *= np.uint8([0, 1, 0])
             draw_sampling_rectangle(frame, sampling_rectangle)
 
-            # Normalise the Mahalanobis image to [0, max_distance] for visualisation.
+            # Normalise the Mahalanobis image so that it represents [0, max_distance] in visualisation.
             mahalanobis_img = mahalanobis_img / max_distance
 
             # Show the results
