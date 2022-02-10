@@ -32,7 +32,10 @@ Now you should have a working segmentation method, and it is finally time to pla
 For example:
 - Try it out on different colours/surfaces. How well does it work?
 - Try changing the threshold manually using the slider.
-- Also check out how well Otsu's method estimates a decent threshold by pressing `o`.
+- As we know, Otsu's method estimates a threshold between modes in a bimodal histogram distribution.
+  Check out how well Otsu's method estimates a decent threshold by pressing `o`.
+  When does Otsu's work well, and when is the threshold estimate bad?
+  Why?
 
 
 You can now continue to the [next step](3-further-work.md) to make it a bit more advanced.

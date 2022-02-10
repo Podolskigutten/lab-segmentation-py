@@ -64,8 +64,8 @@ def run_segmentation_solution():
             # Segment out the areas of the image that fits well enough.
             gui.thresh_val, segmented = perform_segmentation(mahalanobis_img, gui.thresh_val, use_otsu, max_distance)
 
-            # Insert the segmented area as a green layer in the input frame and draw the sampling rectangle.
-            frame[segmented > 0] = (0, 255, 0)
+            # Highlight the segmented area in green in the input frame and draw the sampling rectangle.
+            frame[segmented > 0] *= np.uint8([0, 1, 0])
             draw_sampling_rectangle(frame, sampling_rectangle)
 
             # Normalise the Mahalanobis image to [0, max_distance] for visualisation.

@@ -117,3 +117,10 @@ Add this class to the lab, and change the parameters to use this model instead:
 
 Play around with the parameters for [sklearn.mixture.GaussianMixture](https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html?highlight=gmm#sklearn-mixture-gaussianmixture).
 How does this model compare to the single component normal model?
+
+
+## 7. Use the segmentation method
+Here are some suggestions:
+- Insert a background image in the segmented area (like with a green screen)
+- Track the pixel coordinates of a coloured object
+- Estimate the contours of the table/floor or some object
