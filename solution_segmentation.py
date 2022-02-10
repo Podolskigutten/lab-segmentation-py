@@ -18,9 +18,6 @@ def run_segmentation_solution():
     initial_thresh_val = 8                  # Initial value for threshold.
     model_type = MultivariateNormalModel    # Model: MultivariateNormalModel and GaussianMixtureModel is implemented.
 
-    # Set up a simple gui for the lab (based on OpenCV highgui).
-    gui = SegmentationLabGui(initial_thresh_val, max_distance)
-
     # Connect to the camera.
     # Change to video file if you want to use that instead.
     video_source = 0
@@ -44,59 +41,60 @@ def run_segmentation_solution():
     samples = extract_training_samples(feature_image, sampling_rectangle)
     model = model_type(samples)
 
-    # The main loop in the program.
-    while True:
-        # Read next frame.
-        success, frame = cap.read()
-        if not success:
-            break
+    # Set up a simple gui for the lab (based on OpenCV highgui) and run the main loop.
+    with SegmentationLabGui(initial_thresh_val, max_distance) as gui:
+        while True:
+            # Read next frame.
+            success, frame = cap.read()
+            if not success:
+                break
 
-        # Extract features.
-        feature_image = extract_features(frame)
+            # Extract features.
+            feature_image = extract_features(frame)
 
-        # Update if using adaptive model
-        if use_adaptive_model:
-            new_samples = extract_training_samples(feature_image, sampling_rectangle)
-            update_samples(samples, new_samples, adaptive_update_ratio)
-            model = model_type(samples)
+            # Update if using adaptive model
+            if use_adaptive_model:
+                new_samples = extract_training_samples(feature_image, sampling_rectangle)
+                update_samples(samples, new_samples, adaptive_update_ratio)
+                model = model_type(samples)
 
-        # Compute how well the pixel features fit with the model.
-        mahalanobis_img = model.compute_mahalanobis_distances(feature_image)
+            # Compute how well the pixel features fit with the model.
+            mahalanobis_img = model.compute_mahalanobis_distances(feature_image)
 
-        # Segment out the areas of the image that fits well enough.
-        gui.thresh_val, segmented = perform_segmentation(mahalanobis_img, gui.thresh_val, use_otsu, max_distance)
+            # Segment out the areas of the image that fits well enough.
+            gui.thresh_val, segmented = perform_segmentation(mahalanobis_img, gui.thresh_val, use_otsu, max_distance)
 
-        # Insert the segmented area as a green layer in the input frame and draw the sampling rectangle.
-        frame[segmented > 0] = (0, 255, 0)
-        draw_sampling_rectangle(frame, sampling_rectangle)
+            # Insert the segmented area as a green layer in the input frame and draw the sampling rectangle.
+            frame[segmented > 0] = (0, 255, 0)
+            draw_sampling_rectangle(frame, sampling_rectangle)
 
-        # Normalise the Mahalanobis image to [0, max_distance] for visualisation.
-        mahalanobis_img = mahalanobis_img / max_distance
+            # Normalise the Mahalanobis image to [0, max_distance] for visualisation.
+            mahalanobis_img = mahalanobis_img / max_distance
 
-        # Show the results
-        gui.show_frame(frame)
-        gui.show_mahalanobis(mahalanobis_img)
+            # Show the results
+            gui.show_frame(frame)
+            gui.show_mahalanobis(mahalanobis_img)
 
-        # Update the GUI and wait a short time for input from the keyboard.
-        key = cv2.waitKey(1)
+            # Update the GUI and wait a short time for input from the keyboard.
+            key = gui.wait_key(1)
 
-        # React to keyboard commands.
-        if key == ord('q'):
-            print("Quitting")
-            break
+            # React to keyboard commands.
+            if key == ord('q'):
+                print("Quitting")
+                break
 
-        elif key == ord(' '):
-            print("Extracting samples manually")
-            samples = extract_training_samples(feature_image, sampling_rectangle)
-            model = model_type(samples)
+            elif key == ord(' '):
+                print("Extracting samples manually")
+                samples = extract_training_samples(feature_image, sampling_rectangle)
+                model = model_type(samples)
 
-        elif key == ord('o'):
-            use_otsu = not use_otsu
-            print(f"Use Otsu's: {use_otsu}")
+            elif key == ord('o'):
+                use_otsu = not use_otsu
+                print(f"Use Otsu's: {use_otsu}")
 
-        elif key == ord('a'):
-            use_adaptive_model = not use_adaptive_model
-            print(f"Use adaptive model: {use_adaptive_model}")
+            elif key == ord('a'):
+                use_adaptive_model = not use_adaptive_model
+                print(f"Use adaptive model: {use_adaptive_model}")
 
     # Stop video source.
     cap.release()
