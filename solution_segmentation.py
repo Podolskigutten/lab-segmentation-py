@@ -117,8 +117,11 @@ class MultivariateNormalModel:
         self._mean = np.mean(samples, axis=0)
         self._covariance = np.cov(samples, rowvar=False)
 
-        if not np.all(self._covariance.diagonal() > 1e-6):
-            self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 0.1
+        # We are going to compute the inverse of the estimated covariance,
+        # so we must ensure that the matrix is indeed invertible (not singular).
+        if not np.all(self._covariance.diagonal() > 1.e-6):
+            # Regularise the covariance.
+            self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 1.e-6
 
         self._inverse_covariance = np.linalg.inv(self._covariance)
 

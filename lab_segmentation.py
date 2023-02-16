@@ -117,9 +117,10 @@ class MultivariateNormalModel:
         self._covariance = np.identity(samples.shape[1])            # Dummy solution, replace
 
         # We are going to compute the inverse of the estimated covariance,
-        # so we must ensure that that the matrix is indeed invertible (not singular).
-        if not np.all(self._covariance.diagonal() > 1e-6):
-            self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 0.1
+        # so we must ensure that the matrix is indeed invertible (not singular).
+        if not np.all(self._covariance.diagonal() > 1.e-6):
+            # Regularise the covariance.
+            self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 1.e-6
 
         # TODO 1.2: Compute the inverse of the estimated covariance.
         self._inverse_covariance = np.identity(samples.shape[1])    # Dummy solution, replace
