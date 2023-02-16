@@ -10,6 +10,7 @@ The multivariate normal distribution is characterized by a mean vector **&mu;** 
 (\boldsymbol{\mu} - \mathbf{x}) \right]](img/multivariate_normal_distribution.png)
 
 The method `MultivariateNormalModel._performTraining()` should estimate the mean `self._mean` and the covariance `self._covariance` for the model based on the rows of training samples in the matrix `samples` collected from the sampling region.
+
 It must also compute the inverse of the covariance matrix `self._inverse_covariance`, which we will later use to compute the Mahalanobis distance.
 
 You can find everything you need for this in [NumPy](https://numpy.org/).
@@ -26,7 +27,7 @@ normal model described by `self._mean` and `self._inverse_covariance` and return
 
 - Hint: For a very efficient solution, take a look at [scipy.spatial.distance.cdist](https://docs.scipy.org/doc/scipy-1.8.0/html-scipyorg/reference/generated/scipy.spatial.distance.cdist.html?highlight=cdist#scipy-spatial-distance-cdist) 
 
-## 3. Experiment!
+## Experiment!
 Now you should have a working segmentation method, and it is finally time to play around with it!
 
 For example:
