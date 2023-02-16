@@ -1,8 +1,9 @@
-# Lab: Real-time learning and segmentation
+# Real-time learning and segmentation
+Welcome to this lab in the computer vision course [TEK5030] at the University of Oslo.
 In this lab we will experiment with real time image segmentation on image streams from a camera or a prerecorded video.
 
 Start by cloning this repository on your machine.
-You can also download the [videos](https://www.uio.no/studier/emner/matnat/its/TEK5030/v19/resurser/lab_11_videos.zip)
+If you want to use prerecorded video, you can download the [videos](https://www.uio.no/studier/emner/matnat/its/TEK5030/v19/resurser/lab_11_videos.zip)
 (259MB) and unzip them somewhere convenient on your computer[&ast;](#terminal).
 Then, open the project in PyCharm.
 
