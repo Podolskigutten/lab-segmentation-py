@@ -1,5 +1,5 @@
 # Real-time learning and segmentation
-Welcome to this lab in the computer vision course [TEK5030] at the University of Oslo.
+Welcome to this lab in the computer vision course [TEK5030](https://www.uio.no/studier/emner/matnat/its/TEK5030/) at the University of Oslo.
 In this lab we will experiment with real time image segmentation on image streams from a camera or a prerecorded video.
 
 Start by cloning this repository on your machine.
