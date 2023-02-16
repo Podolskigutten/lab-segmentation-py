@@ -116,6 +116,10 @@ class MultivariateNormalModel:
 
         self._mean = np.mean(samples, axis=0)
         self._covariance = np.cov(samples, rowvar=False)
+
+        if not np.all(self._covariance.diagonal() > 1e-6):
+            self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 0.1
+
         self._inverse_covariance = np.linalg.inv(self._covariance)
 
     def compute_mahalanobis_distances(self, feature_image):
