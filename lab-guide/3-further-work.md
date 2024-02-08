@@ -48,7 +48,10 @@ Try using more than 3 features per pixel.
   - Other ideas?
   
 
-## 6. Try other models
+## 6. Further experiments
+Here are a few suggestions for further experiments with image segmentation.
+
+### A. Try other models
 There are many other types of models available in Python.
 See for example the [scikit-learn library](https://scikit-learn.org/stable/).
 
@@ -120,11 +123,22 @@ Play around with the parameters for [sklearn.mixture.GaussianMixture].
 How does this model compare to the single component normal model?
 
 
-## 7. Use the segmentation method
-Here are some suggestions:
-- Insert a background image in the segmented area (like with a green screen)
-- Track the pixel coordinates of a coloured object
-- Estimate the contours of the table/floor or some object
+### B. Compute contours of the segmented objects and extract interesting features
+In OpenCV you can use the contour of segmented areas to compute a set of different features of that object, such as center of mass, orientation, area and so on.
+You can even fit ellipses or lines to your objects.
+
+Take a look at the following OpenCV tutorials and experiment with feature extraction based on contours!
+- [Contours: Getting Started]
+- [Contour Features]
+- [Contour Properties]
+
+
+### C. Make use of your segmentation method
+Here are some suggested applications:
+- Insert a background image in the segmented area (like with a green screen).
+- Track the pixel coordinates (center of mass) and maybe even the orientation of a coloured object.
+- Detect the road in the supplied videos and estimate a line in the image you should follow to keep on the road.
+
 
 [numpy.random.rand]: https://numpy.org/doc/stable/reference/random/generated/numpy.random.rand.html
 [numpy.random.shuffle]: https://numpy.org/doc/stable/reference/random/generated/numpy.random.shuffle.html
@@ -134,3 +148,7 @@ Here are some suggestions:
 [cv::connectedComponentsWithStats]: https://docs.opencv.org/4.9.0/d3/dc0/group__imgproc__shape.html#gae57b028a2b2ca327227c2399a9d53241
 [cv::imgproc_color_conversions]: https://docs.opencv.org/4.9.0/de/d25/imgproc_color_conversions.html
 [cv::cvtColor]: https://docs.opencv.org/4.9.0/d8/d01/group__imgproc__color__conversions.html#ga397ae87e1288a81d2363b61574eb8cab
+
+[Contours: Getting Started]: https://docs.opencv.org/4.9.0/d4/d73/tutorial_py_contours_begin.html
+[Contour Features]: https://docs.opencv.org/4.9.0/dd/d49/tutorial_py_contour_features.html
+[Contour Properties]: https://docs.opencv.org/4.9.0/d1/d32/tutorial_py_contour_properties.html
