@@ -40,13 +40,14 @@ We have chosen to distribute the code on the following modules:
   Contains the main loop of the program, the unfinished model and some other functions you will complete.
   
   Note in particular that:
-    - Keypress `space` extracts samples from the sampling region and estimates a new multivariate normal model
-    - Keypress `o` turns thresholding by Otsu's method on/off (Default is off)
-    - Keypress `a` turns the adaptive model on/off (Default is off)
-    - Keypress `q` exits the program
+    - Keypress <kbd>space</kbd> extracts samples from the sampling region and estimates a new multivariate normal model
+    - Keypress <kbd>o</kbd> turns thresholding by Otsu's method on/off (Default is off)
+    - Keypress <kbd>a</kbd> turns the adaptive model on/off (Default is off)
+    - Keypress <kbd>q</kbd> exits the program
   
   If you want to work on images from one of the videos instead of from the camera, you can change to code from `video_source = 0` to `video_source = "your_video_file.avi"`.
-  You might also want to adjust the frame delay time on the line `key = cv2.waitKey(1)` (see [waitKey()](https://docs.opencv.org/4.5.5/d7/dfc/group__highgui.html#ga5628525ad33f52eab17feebcfba38bd7))
+  
+  You might also want to adjust the frame delay time on the line `key = cv2.waitKey(1)` (see [waitKey()])
 
 - [**common_lab_utils.py**](../common_lab_utils.py)
 
@@ -60,3 +61,5 @@ We have chosen to distribute the code on the following modules:
   
 
   Please continue to the [next step](2-implement-simple-color-based-segmentation.md).
+
+[waitKey()]: https://docs.opencv.org/4.9.0/d7/dfc/group__highgui.html#ga5628525ad33f52eab17feebcfba38bd7
