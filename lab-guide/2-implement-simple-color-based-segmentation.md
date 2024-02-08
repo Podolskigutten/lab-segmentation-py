@@ -25,7 +25,7 @@ Given a multivariate normal model, the Mahalanobis distance for a vector **x** i
 This method should compute the Mahalanobis distance between every pixel in the input image and the estimated multivariate
 normal model described by `self._mean` and `self._inverse_covariance` and return an image of Mahalanobis distances.
 
-- Hint: For a very efficient solution, take a look at [scipy.spatial.distance.cdist](https://docs.scipy.org/doc/scipy-1.8.0/html-scipyorg/reference/generated/scipy.spatial.distance.cdist.html?highlight=cdist#scipy-spatial-distance-cdist) 
+- Hint: For a very efficient solution, take a look at [scipy.spatial.distance.cdist].
 
 ## Experiment!
 Now you should have a working segmentation method, and it is finally time to play around with it!
@@ -40,3 +40,5 @@ For example:
 
 
 You can now continue to the [next step](3-further-work.md) to make it a bit more advanced.
+
+[scipy.spatial.distance.cdist]: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
