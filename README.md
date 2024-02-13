@@ -30,4 +30,4 @@ rm lab_11_videos.zip
 
 [TEK5030]: https://www.uio.no/studier/emner/matnat/its/TEK5030/
 [videos]: https://www.uio.no/studier/emner/matnat/its/TEK5030/v19/resurser/lab_11_videos.zip
-[lab_intro]: https://github.com/tek5030/lab-intro/blob/master/py/lab-guide/1-open-project-in-pycharm.md
+[the intro lab]: https://github.com/tek5030/lab-intro/blob/master/py/lab-guide/1-open-project-in-pycharm.md
