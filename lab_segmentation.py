@@ -113,8 +113,8 @@ class MultivariateNormalModel:
         """Trains the model"""
 
         # TODO 1.1: Train the multivariate normal model by estimating the mean and covariance given the samples.
-        self._mean = np.ones(samples.shape[1])                      # Dummy solution, replace
-        self._covariance = np.identity(samples.shape[1])            # Dummy solution, replace
+        self._mean = np.mean(samples, axis=0)                      
+        self._covariance = np.cov(samples, rowvar=False)   
 
         # We are going to compute the inverse of the estimated covariance,
         # so we must ensure that the matrix is indeed invertible (not singular).
