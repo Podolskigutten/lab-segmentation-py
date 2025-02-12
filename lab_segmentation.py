@@ -1,6 +1,7 @@
 # Import libraries
 import cv2
 import numpy as np
+import scipy.spatial.distance as ssd
 
 # Import common lab functions.
 from common_lab_utils import SegmentationLabGui, \
@@ -123,7 +124,7 @@ class MultivariateNormalModel:
             self._covariance = self._covariance + np.identity(self._covariance.shape[0]) * 1.e-6
 
         # TODO 1.2: Compute the inverse of the estimated covariance.
-        self._inverse_covariance = np.identity(samples.shape[1])    # Dummy solution, replace
+        self._inverse_covariance = np.linalg.inv(self._covariance)    # Dummy solution, replace
 
     def compute_mahalanobis_distances(self, feature_image):
         """Computes the Mahalanobis distances for a feature image given this model"""
@@ -131,7 +132,7 @@ class MultivariateNormalModel:
         samples = feature_image.reshape(-1, 3)
 
         # TODO 2: Compute the mahalanobis distance for each pixel feature vector wrt the multivariate normal model.
-        mahalanobis = np.inf * np.ones(samples.shape[0])            # Dummy solution, replace
+        mahalanobis = ssd.cdist(samples, self._mean[np.newaxis, :], metric='mahalanobis', VI=self._inverse_covariance)
 
         return mahalanobis.reshape(feature_image.shape[:2])
 
@@ -147,7 +148,10 @@ def update_samples(old_samples, new_samples, update_ratio):
     """
 
     # TODO 3: Implement a random update of samples given the ratio of new_samples
-    old_samples = new_samples
+    rand_num = np.random.rand(new_samples.shape[0])
+    selected_samples = rand_num < update_ratio
+    old_samples[selected_samples] = new_samples[selected_samples]
+
 
 
 def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
@@ -173,6 +177,9 @@ def perform_segmentation(distance_image, thresh, use_otsu, max_dist_value):
     thresh_scaled, segmented_image = cv2.threshold(distances_scaled, thresh_scaled, 255, thresh_type)
 
     # TODO 4: Add morphological operations to reduce noise, and other fancy segmentation approaches.
+    structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_OPEN, structuring_element)
+    segmented_image = cv2.morphologyEx(segmented_image, cv2.MORPH_CLOSE, structuring_element)
 
     # Return updated threshold (from Otsu's) and segmented image.
     return round(thresh_scaled / scale), np.uint8(segmented_image)
@@ -190,8 +197,13 @@ def extract_features(feature_image):
     feature_image = np.float32(feature_image) / 255.0
 
     # TODO 5: Extract other/more features for each pixel.
-    return feature_image
-
+    # return feature_image
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HSV)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2HLS)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Lab)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2Luv)
+    # return cv2.cvtColor(feature_image, cv2.COLOR_BGR2XYZ)
+    return cv2.cvtColor(feature_image, cv2.COLOR_BGR2YCrCb)
 
 if __name__ == "__main__":
     run_segmentation_lab()
