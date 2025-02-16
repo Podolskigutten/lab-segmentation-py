@@ -19,7 +19,7 @@ def run_segmentation_lab():
 
     # Connect to the camera.
     # Change to video file if you want to use that instead.
-    video_source = 0
+    video_source = 1
     cap = cv2.VideoCapture(video_source)
     if not cap.isOpened():
         print(f"Could not open video source {video_source}")
